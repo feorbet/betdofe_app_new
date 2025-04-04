@@ -1,17 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreen extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final Color primaryColor = const Color(0xFF2FA49C);
+  final Color darkPrimary = const Color(0xFF1A6E65);
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
@@ -26,346 +19,264 @@ class _HomeScreenState extends State<HomeScreen> {
     final userName = user?.displayName ?? 'Apostador';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A1A), // Fundo escuro para consistência
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Cabeçalho: Saudação e sino de notificação
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '${_getGreeting()}, $userName!',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.notifications_none,
-                      color: Colors.black,
-                      size: 20,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Card principal: Lucro Líquido, Rendimento e Despesa
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+      backgroundColor: Colors.white,
+      extendBody: true,
+      body: Stack(
+        children: [
+          // Fundo com curva
+          ClipPath(
+            clipper: HeaderClipper(),
+            child: Container(
+              height: 260,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [primaryColor, darkPrimary],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 60, 20, 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Lucro Líquido do Mês',
-                          style: TextStyle(
-                            color: Colors.black54,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          child: const Icon(
-                            Icons.more_horiz,
-                            color: Colors.black54,
-                            size: 20,
-                          ),
-                        ),
+                        Text(_getGreeting(),
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 16)),
+                        Text(userName,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold)),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'R\$ 1.556,00',
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.arrow_downward,
-                              color: Colors.green,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 5),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text(
-                                  'Rendimento Bruto',
-                                  style: TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                Text(
-                                  'R\$ 1.840,00',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.arrow_upward,
-                              color: Colors.red,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 5),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: const [
-                                Text(
-                                  'Despesa Bruta',
-                                  style: TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                Text(
-                                  'R\$ 284,00',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                      child: const Icon(Icons.notifications_none,
+                          color: Colors.white),
+                    )
                   ],
                 ),
               ),
             ),
-            // Histórico de Apostas
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text(
-                    'Histórico de Apostas',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    'Ver tudo',
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontSize: 14,
-                    ),
-                  ),
+          ),
+
+          // Painel de saldo
+          Positioned(
+            top: 160,
+            left: 20,
+            right: 20,
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: primaryColor,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  )
                 ],
               ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildTransactionTile(
-                    icon: Icons.sports_soccer,
-                    title: 'Aposta - Flamengo x Palmeiras',
-                    date: 'Hoje',
-                    value: '+ R\$ 850,00',
-                    isGain: true,
-                  ),
-                  _buildTransactionTile(
-                    icon: Icons.sports_soccer,
-                    title: 'Aposta - Corinthians x São Paulo',
-                    date: 'Ontem',
-                    value: '- R\$ 85,00',
-                    isGain: false,
-                    status: 'pending',
-                  ),
-                  _buildTransactionTile(
-                    icon: Icons.sports_soccer,
-                    title: 'Aposta - Grêmio x Inter',
-                    date: '30 Jan 2022',
-                    value: '+ R\$ 1.406,00',
-                    isGain: true,
-                  ),
-                  _buildTransactionTile(
-                    icon: Icons.sports_soccer,
-                    title: 'Aposta - Santos x Bahia',
-                    date: '16 Jan 2022',
-                    value: '- R\$ 119,00',
-                    isGain: false,
-                  ),
-                  _buildTransactionTile(
-                    icon: Icons.sports_soccer,
-                    title: 'Aposta - Atlético MG x Cruzeiro',
-                    date: 'Ontem',
-                    value: '- R\$ 85,00',
-                    isGain: false,
-                  ),
+                  const Text('Total Balance',
+                      style: TextStyle(color: Colors.white70)),
+                  const SizedBox(height: 8),
+                  const Text('R\$ 1.556,00',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: const [
+                      Column(
+                        children: [
+                          Icon(Icons.arrow_downward, color: Colors.white),
+                          SizedBox(height: 4),
+                          Text('Ganhos',
+                              style: TextStyle(color: Colors.white70)),
+                          Text('R\$ 1.840,00',
+                              style: TextStyle(color: Colors.white)),
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          Icon(Icons.arrow_upward, color: Colors.white),
+                          SizedBox(height: 4),
+                          Text('Perdas',
+                              style: TextStyle(color: Colors.white70)),
+                          Text('R\$ 284,00',
+                              style: TextStyle(color: Colors.white)),
+                        ],
+                      )
+                    ],
+                  )
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-      // Barra de navegação inferior
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFF1A1A1A),
-        selectedItemColor: Colors.green,
-        unselectedItemColor: Colors.white70,
-        type: BottomNavigationBarType.fixed,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: '',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(
-                color: Colors.green,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.add,
-                color: Colors.white,
-                size: 30,
+
+          // Conteúdo abaixo do painel
+          Positioned.fill(
+            top: 300,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Cabeçalho fixo
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: const [
+                      Text('Histórico de Apostas',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text('Ver tudo',
+                          style: TextStyle(color: Colors.grey, fontSize: 14))
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Lista rolável
+                  Expanded(
+                    child: ListView(
+                      children: [
+                        _buildTransactionTile('Flamengo x Palmeiras', 'Hoje',
+                            '+ R\$ 850,00', true),
+                        _buildTransactionTile('Corinthians x São Paulo',
+                            'Ontem', '- R\$ 85,00', false, 'Pendente'),
+                        _buildTransactionTile('Grêmio x Inter', '30 Jan 2022',
+                            '+ R\$ 1.406,00', true),
+                        _buildTransactionTile('Santos x Bahia', '16 Jan 2022',
+                            '- R\$ 119,00', false),
+                        _buildTransactionTile('Atlético MG x Cruzeiro', 'Ontem',
+                            '- R\$ 85,00', false, 'Perdeu'),
+                      ],
+                    ),
+                  )
+                ],
               ),
             ),
-            label: '',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet),
-            label: '',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: '',
           ),
         ],
-        onTap: (index) {
-          // Futura implementação de navegação
-        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        backgroundColor: primaryColor,
+        child: const Icon(Icons.add),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        child: Container(
+          height: 60,
+          decoration: const BoxDecoration(color: Colors.white),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: const [
+              Icon(Icons.home, color: Colors.grey),
+              Icon(Icons.bar_chart, color: Colors.grey),
+              SizedBox(width: 40), // espaço para o FAB
+              Icon(Icons.attach_money, color: Colors.grey),
+              Icon(Icons.person, color: Colors.grey),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildTransactionTile({
-    required IconData icon,
-    required String title,
-    required String date,
-    required String value,
-    required bool isGain,
-    String? status,
-  }) {
+  static Widget _buildTransactionTile(
+      String title, String date, String amount, bool isGain,
+      [String? status]) {
+    final color = isGain ? Colors.green : Colors.red;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 5,
+            spreadRadius: 1,
+          )
+        ],
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: Colors.black, size: 20),
+          CircleAvatar(
+            backgroundColor: Colors.grey.shade200,
+            child: const Icon(Icons.sports_soccer, color: Colors.black54),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 16)),
+                const SizedBox(height: 4),
                 Row(
                   children: [
-                    Text(
-                      date,
-                      style: const TextStyle(
-                        color: Colors.black54,
-                        fontSize: 12,
-                      ),
-                    ),
+                    Text(date, style: const TextStyle(fontSize: 12)),
                     if (status != null) ...[
-                      const SizedBox(width: 5),
+                      const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          color: Colors.grey.shade200,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Text(
-                          status,
-                          style: const TextStyle(
-                            color: Colors.black54,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ),
-                    ],
+                        child: Text(status,
+                            style: const TextStyle(
+                                fontSize: 10, color: Colors.black87)),
+                      )
+                    ]
                   ],
-                ),
+                )
               ],
             ),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              color: isGain ? Colors.green : Colors.red,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text(amount,
+              style: TextStyle(
+                  color: color, fontWeight: FontWeight.bold, fontSize: 16)),
         ],
       ),
     );
   }
+}
+
+// CLIPPER PARA A CURVA DO TOPO
+class HeaderClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.lineTo(0, size.height - 60);
+    path.quadraticBezierTo(
+        size.width / 2, size.height, size.width, size.height - 60);
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
