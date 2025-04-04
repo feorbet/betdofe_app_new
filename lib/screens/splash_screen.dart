@@ -53,23 +53,29 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Center(
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            return ShaderMask(
-              shaderCallback: (bounds) =>
-                  _createSheen(bounds, _controller.value),
-              blendMode: BlendMode.srcATop,
-              child: child,
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/stadium_background.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Center(
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return ShaderMask(
+                shaderCallback: (bounds) =>
+                    _createSheen(bounds, _controller.value),
+                blendMode: BlendMode.srcATop,
+                child: child,
+              );
+            },
             child: Image.asset(
               'assets/logo.png',
-              width: MediaQuery.of(context).size.width * 0.75,
+              width: 300, // Tamanho fixo para garantir que fique maior
               fit: BoxFit.contain,
             ),
           ),
