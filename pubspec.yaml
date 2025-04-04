@@ -1,0 +1,46 @@
+name: betdofe_app_new
+description: Aplicativo de apostas esportivas BET DO FÉ
+publish_to: 'none' # Remove isso se for publicar
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+    
+
+  # Firebase
+  firebase_core: ^2.25.4
+  firebase_auth: ^4.17.4
+
+  # Login social
+  google_sign_in: ^6.2.1
+  flutter_signin_button: ^2.0.0
+
+  # UI
+  google_fonts: ^6.1.0
+  flutter_svg: ^2.0.7  # Suporte a SVG
+  shimmer: ^3.0.0
+  provider: ^6.1.2
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/logo.png
+    - assets/logo.svg   
+    - assets/google.png
+    - assets/facebook.png
+    - assets/apple.png
+    - assets/onboarding/money.png
+    - assets/onboarding/chart.png
+    - assets/onboarding/target.png
+    - assets/onboarding/pattern.png
+    - assets/onboarding/background_pattern.png

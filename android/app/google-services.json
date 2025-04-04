@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1019981443447",
+    "project_id": "betdofeapp",
+    "storage_bucket": "betdofeapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1019981443447:android:9b920bcf5396374fb9b172",
+        "android_client_info": {
+          "package_name": "com.example.betdofeappnew"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1019981443447-uce27hsc87lmntmdasa5aejsdpqgpjia.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.betdofeappnew",
+            "certificate_hash": "07c175e2290c50793c01e794bb8d24e066367924"
+          }
+        },
+        {
+          "client_id": "1019981443447-3rq0no5u4lakiacdoe1fqrsvg16643hh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDj4sQ48E-WAPGHU4vyt9EO5kpABV6GHXM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1019981443447-3rq0no5u4lakiacdoe1fqrsvg16643hh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
