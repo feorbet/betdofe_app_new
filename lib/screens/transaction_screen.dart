@@ -1,380 +1,738 @@
-// home_screen.dart com TransactionScreen integrada
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart';
+import 'package:flutter/services.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+class TransactionScreen extends StatefulWidget {
+  const TransactionScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<TransactionScreen> createState() => _TransactionScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+class _TransactionScreenState extends State<TransactionScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   final Color primaryColor = const Color(0xFF1B5E20);
-  final Color darkPrimary = const Color(0xFF0D3B13);
   final Color lightGreen = const Color(0xFF2E7D32);
 
-  int _selectedIndex = 0;
-  bool isValuesVisible = true;
+  String currentTab = 'Por Conta'; // Aba inicial
+  bool isPositive = true;
 
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Bom dia';
-    if (hour < 18) return 'Boa tarde';
-    return 'Boa noite';
-  }
+  // Controladores para "Por Conta" e "Por Aposta"
+  final TextEditingController valueController = TextEditingController();
+  final TextEditingController investedValueController = TextEditingController();
+  final TextEditingController dateController = TextEditingController();
 
-  void _onItemTapped(int index) {
-    setState(() => _selectedIndex = index);
-  }
+  // Controladores para "Por Aposta"
+  final TextEditingController homeTeamController = TextEditingController();
+  final TextEditingController awayTeamController = TextEditingController();
+  final TextEditingController oddController = TextEditingController();
+  final TextEditingController perBetInvestedValueController =
+      TextEditingController();
 
-  void _toggleValuesVisibility() {
-    setState(() {
-      isValuesVisible = !isValuesVisible;
+  String? selectedAccount;
+  String? selectedBettingHouse;
+
+  final FocusNode _valueFocusNode = FocusNode();
+  final FocusNode _investedValueFocusNode = FocusNode();
+  final FocusNode _perBetInvestedValueFocusNode = FocusNode();
+
+  List<String> accounts = [];
+  List<String> bettingHouses = [];
+
+  double _value = 0.0;
+
+  final currencyFormatter =
+      NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+
+  @override
+  void initState() {
+    super.initState();
+
+    dateController.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
+    valueController.text = currencyFormatter.format(0);
+    investedValueController.text = currencyFormatter.format(0);
+    perBetInvestedValueController.text = currencyFormatter.format(0);
+
+    // Carregar contas ativas do Firestore para "Por Conta"
+    _loadActiveAccounts();
+
+    // Listeners para "Por Conta" e "Por Aposta"
+    valueController.addListener(() {
+      String raw = valueController.text.replaceAll(RegExp(r'[^0-9]'), '');
+      if (raw.isEmpty) raw = '0';
+      double parsed = double.parse(raw) / 100;
+      String formatted = currencyFormatter.format(parsed);
+      if (valueController.text != formatted) {
+        valueController.value = TextEditingValue(
+          text: formatted,
+          selection: TextSelection.collapsed(offset: formatted.length),
+        );
+      }
+    });
+
+    investedValueController.addListener(() {
+      String raw =
+          investedValueController.text.replaceAll(RegExp(r'[^0-9]'), '');
+      if (raw.isEmpty) raw = '0';
+      double parsed = double.parse(raw) / 100;
+      String formatted = currencyFormatter.format(parsed);
+      if (investedValueController.text != formatted) {
+        investedValueController.value = TextEditingValue(
+          text: formatted,
+          selection: TextSelection.collapsed(offset: formatted.length),
+        );
+      }
+    });
+
+    perBetInvestedValueController.addListener(() {
+      String raw =
+          perBetInvestedValueController.text.replaceAll(RegExp(r'[^0-9]'), '');
+      if (raw.isEmpty) raw = '0';
+      double parsed = double.parse(raw) / 100;
+      String formatted = currencyFormatter.format(parsed);
+      if (perBetInvestedValueController.text != formatted) {
+        perBetInvestedValueController.value = TextEditingValue(
+          text: formatted,
+          selection: TextSelection.collapsed(offset: formatted.length),
+        );
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusScope.of(context).requestFocus(_valueFocusNode);
+    });
+
+    _valueFocusNode.addListener(() {
+      if (!_valueFocusNode.hasFocus) {
+        String raw = valueController.text.replaceAll(RegExp(r'[^0-9]'), '');
+        if (raw.isEmpty) raw = '0';
+        double parsed = double.parse(raw) / 100;
+        _value = isPositive ? parsed.abs() : -parsed.abs();
+        valueController.text = currencyFormatter.format(_value);
+      }
+    });
+
+    _investedValueFocusNode.addListener(() {
+      if (!_investedValueFocusNode.hasFocus) {
+        String raw =
+            investedValueController.text.replaceAll(RegExp(r'[^0-9]'), '');
+        if (raw.isEmpty) raw = '0';
+        double parsed = double.parse(raw) / 100;
+        investedValueController.text = currencyFormatter.format(parsed);
+      }
+    });
+
+    _perBetInvestedValueFocusNode.addListener(() {
+      if (!_perBetInvestedValueFocusNode.hasFocus) {
+        String raw = perBetInvestedValueController.text
+            .replaceAll(RegExp(r'[^0-9]'), '');
+        if (raw.isEmpty) raw = '0';
+        double parsed = double.parse(raw) / 100;
+        perBetInvestedValueController.text = currencyFormatter.format(parsed);
+      }
     });
   }
 
-  void _logout(BuildContext context) async {
-    await _auth.signOut();
-    Navigator.pushReplacementNamed(context, '/login');
+  // Carregar contas ativas do Firestore
+  Future<void> _loadActiveAccounts() async {
+    final snapshot = await _firestore
+        .collection('accounts')
+        .where('status', isEqualTo: 'Ativo')
+        .get();
+    setState(() {
+      accounts = snapshot.docs.map((doc) => doc['name'] as String).toList();
+    });
   }
 
-  void _showOverlay(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const TransactionScreen(),
-      ),
+  // Carregar casas de aposta associadas à conta selecionada
+  Future<void> _loadBettingHousesForAccount(String accountName) async {
+    final snapshot = await _firestore
+        .collection('accounts')
+        .where('name', isEqualTo: accountName)
+        .get();
+    if (snapshot.docs.isNotEmpty) {
+      final accountData = snapshot.docs.first.data();
+      final bettingHouse = accountData['bettingHouse'] as String?;
+      setState(() {
+        bettingHouses = bettingHouse != null ? [bettingHouse] : [];
+        selectedBettingHouse =
+            bettingHouses.isNotEmpty ? bettingHouses[0] : null;
+      });
+    } else {
+      setState(() {
+        bettingHouses = [];
+        selectedBettingHouse = null;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _valueFocusNode.dispose();
+    _investedValueFocusNode.dispose();
+    _perBetInvestedValueFocusNode.dispose();
+    valueController.dispose();
+    investedValueController.dispose();
+    dateController.dispose();
+    homeTeamController.dispose();
+    awayTeamController.dispose();
+    oddController.dispose();
+    perBetInvestedValueController.dispose();
+    super.dispose();
+  }
+
+  void _showTab(String tab) {
+    setState(() {
+      currentTab = tab;
+    });
+  }
+
+  void _selectDate(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: TableCalendar(
+            firstDay: DateTime(2000),
+            lastDay: DateTime(2101),
+            focusedDay: DateTime.now(),
+            selectedDayPredicate: (day) {
+              return isSameDay(
+                day,
+                DateTime.parse(DateFormat('yyyy-MM-dd').format(
+                  DateTime.parse(
+                      dateController.text.split('/').reversed.join('-')),
+                )),
+              );
+            },
+            onDaySelected: (selectedDay, focusedDay) {
+              setState(() {
+                dateController.text =
+                    DateFormat('dd/MM/yyyy').format(selectedDay);
+              });
+              Navigator.pop(context);
+            },
+            locale: 'pt_BR',
+            headerStyle: const HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+            ),
+            calendarStyle: const CalendarStyle(
+              todayDecoration: BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+              ),
+              selectedDecoration: BoxDecoration(
+                color: Colors.blue,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = _auth.currentUser;
-    final userName = user?.displayName ?? 'Apostador';
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    final waveHeight = screenHeight * 0.3;
+    final panelTopPosition = screenHeight * 0.17;
+    final fieldsPaddingTop = screenHeight * 0.35;
 
     return Scaffold(
       backgroundColor: Colors.white,
-      extendBody: true,
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
+      body: Stack(
+        children: [
+          ClipPath(
+            clipper: TopCurveClipper(),
+            child: Container(
+              height: waveHeight,
               decoration: BoxDecoration(
-                color: primaryColor,
-              ),
-              child: Text(
-                'Menu',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
+                gradient: LinearGradient(
+                  colors: [lightGreen, primaryColor],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.home),
-              title: const Text('Home'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('Perfil'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Sair'),
-              onTap: () {
-                Navigator.pop(context);
-                _logout(context);
-              },
-            ),
-          ],
-        ),
-      ),
-      body: FutureBuilder<double>(
-        future: _calculateMonthlyBalance(),
-        builder: (context, snapshot) {
-          double balance = snapshot.data ?? 0.0;
-          return Stack(
-            children: [
-              Column(
+          ),
+          Positioned(
+            top: screenHeight * 0.06,
+            left: 0,
+            right: 0,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  const SizedBox(height: 360),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text('Histórico de Transações', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text('Ver tudo', style: TextStyle(color: Colors.grey, fontSize: 14)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Expanded(
-                    child: StreamBuilder<QuerySnapshot>(
-                      stream: _firestore.collection('transactions').orderBy('timestamp', descending: true).snapshots(),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData) return const CircularProgressIndicator();
-                        final transactions = snapshot.data!.docs;
-                        return ListView.builder(
-                          itemCount: transactions.length,
-                          itemBuilder: (context, index) {
-                            final data = transactions[index].data() as Map<String, dynamic>;
-                            final title = data['bettingHouse'] ?? 'Transação';
-                            final date = (data['date'] ?? '').toString();
-                            final value = data['value'] ?? 0.0;
-                            final status = data['status'] ?? '';
-                            return _buildTransactionTile(
-                              title,
-                              date,
-                              value >= 0 ? '+ R\$ ${value.toStringAsFixed(2)}' : '- R\$ ${value.abs().toStringAsFixed(2)}',
-                              value >= 0,
-                              status,
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
+                  _buildTabButton('Por Conta'),
+                  _buildTabButton('Por Aposta'),
                 ],
               ),
-              Stack(
+            ),
+          ),
+          // Painel de rendimentos agora aparece em ambas as abas
+          Positioned(
+            top: panelTopPosition,
+            left: screenWidth * 0.05,
+            right: screenWidth * 0.05,
+            child: _buildRendimientosPanel(),
+          ),
+          Padding(
+            padding: EdgeInsets.only(
+              top: fieldsPaddingTop,
+              left: screenWidth * 0.05,
+              right: screenWidth * 0.05,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClipPath(
-                    clipper: HeaderClipper(),
-                    child: Container(
-                      height: 240,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [lightGreen, primaryColor],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
+                  if (currentTab == 'Por Conta') ...[
+                    _buildDropdownField('Conta', accounts, selectedAccount,
+                        (value) {
+                      setState(() {
+                        selectedAccount = value;
+                        if (value != null) {
+                          _loadBettingHousesForAccount(value);
+                        }
+                      });
+                    }),
+                    SizedBox(height: screenHeight * 0.02),
+                    _buildDropdownField(
+                        'Casa de Aposta', bettingHouses, selectedBettingHouse,
+                        (value) {
+                      setState(() {
+                        selectedBettingHouse = value;
+                      });
+                    }),
+                    SizedBox(height: screenHeight * 0.02),
+                    _buildLabeledInput(
+                      'Valor Investido',
+                      Icons.trending_up,
+                      investedValueController,
+                      true,
+                      _investedValueFocusNode,
+                      isPositive,
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    SizedBox(height: screenHeight * 0.02),
+                    _buildDateInput(),
+                    SizedBox(height: screenHeight * 0.04),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(_getGreeting(), style: const TextStyle(color: Colors.white70, fontSize: 16)),
-                            Text(userName, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                          ],
-                        ),
+                        _buildCircleButton(Icons.check, Colors.green, () async {
+                          if (valueController.text.isNotEmpty &&
+                              dateController.text.isNotEmpty) {
+                            String rawText = valueController.text
+                                .replaceAll(RegExp(r'[^0-9]'), '');
+                            if (rawText.isEmpty) rawText = '0';
+                            double value = double.parse(rawText) / 100;
+                            double formattedValue =
+                                isPositive ? value.abs() : -value.abs();
+
+                            String investedText = investedValueController.text
+                                .replaceAll(RegExp(r'[^0-9]'), '');
+                            if (investedText.isEmpty) investedText = '0';
+                            double invested = double.parse(investedText) / 100;
+
+                            // Exibir caixa de diálogo para "Por Conta"
+                            bool? isAccountActive = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('A conta encontra-se Ativa?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: const Text('SIM'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('NÃO'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (isAccountActive == false &&
+                                selectedAccount != null) {
+                              final accountSnapshot = await _firestore
+                                  .collection('accounts')
+                                  .where('name', isEqualTo: selectedAccount)
+                                  .get();
+                              if (accountSnapshot.docs.isNotEmpty) {
+                                await _firestore
+                                    .collection('accounts')
+                                    .doc(accountSnapshot.docs.first.id)
+                                    .update({'status': 'Inativo'});
+                              }
+                            }
+
+                            await _firestore.collection('transactions').add({
+                              'value': formattedValue,
+                              'date': dateController.text,
+                              'account': selectedAccount,
+                              'bettingHouse': selectedBettingHouse,
+                              'investedValue': invested,
+                              'timestamp': FieldValue.serverTimestamp(),
+                            });
+                            if (!mounted) return;
+                            Navigator.pop(context);
+                          }
+                        }),
+                        _buildCircleButton(Icons.close, Colors.red, () {
+                          Navigator.pop(context);
+                        }),
                       ],
                     ),
-                  ),
+                  ],
+                  if (currentTab == 'Por Aposta') ...[
+                    _buildLabeledInput('Time da Casa', Icons.sports_soccer,
+                        homeTeamController, false, null, true),
+                    const SizedBox(height: 16),
+                    _buildLabeledInput('Time Visitante', Icons.sports_soccer,
+                        awayTeamController, false, null, true),
+                    const SizedBox(height: 16),
+                    _buildLabeledInput(
+                        'Odd', Icons.numbers, oddController, false, null, true),
+                    const SizedBox(height: 16),
+                    _buildLabeledInput(
+                        'Valor Investido',
+                        Icons.trending_up,
+                        perBetInvestedValueController,
+                        true,
+                        _perBetInvestedValueFocusNode,
+                        isPositive),
+                    const SizedBox(height: 16),
+                    _buildDateInput(),
+                    const SizedBox(height: 30),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildCircleButton(Icons.check, Colors.green, () async {
+                          if (homeTeamController.text.isNotEmpty &&
+                              awayTeamController.text.isNotEmpty &&
+                              oddController.text.isNotEmpty &&
+                              perBetInvestedValueController.text.isNotEmpty) {
+                            String rawText = valueController.text
+                                .replaceAll(RegExp(r'[^0-9]'), '');
+                            if (rawText.isEmpty) rawText = '0';
+                            double value = double.parse(rawText) / 100;
+                            double formattedValue =
+                                isPositive ? value.abs() : -value.abs();
+
+                            String investedRaw = perBetInvestedValueController
+                                .text
+                                .replaceAll(RegExp(r'[^0-9]'), '');
+                            if (investedRaw.isEmpty) investedRaw = '0';
+                            double invested = double.parse(investedRaw) / 100;
+
+                            await _firestore.collection('per_bet').add({
+                              'homeTeam': homeTeamController.text,
+                              'awayTeam': awayTeamController.text,
+                              'odd': double.parse(oddController.text),
+                              'investedValue': invested,
+                              'gainedValue': formattedValue,
+                              'date': dateController.text,
+                              'timestamp': FieldValue.serverTimestamp(),
+                            });
+                            if (!mounted) return;
+                            Navigator.pop(context);
+                          }
+                        }),
+                        _buildCircleButton(Icons.close, Colors.red, () {
+                          Navigator.pop(context);
+                        }),
+                      ],
+                    ),
+                  ],
+                  SizedBox(height: screenHeight * 0.1),
                 ],
               ),
-              Positioned(
-                top: 140,
-                left: 0,
-                right: 0,
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: primaryColor,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Saldo Total', style: TextStyle(color: Colors.white70)),
-                          GestureDetector(
-                            onTap: _toggleValuesVisibility,
-                            child: Icon(
-                              isValuesVisible ? Icons.visibility : Icons.visibility_off,
-                              color: Colors.white70,
-                              size: 20,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        isValuesVisible ? 'R\$ ${balance.toStringAsFixed(2)}' : '****',
-                        style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            children: [
-                              const Icon(Icons.arrow_upward, color: Colors.white),
-                              const SizedBox(height: 4),
-                              const Text('Ganhos', style: TextStyle(color: Colors.white70)),
-                              Text(
-                                isValuesVisible ? 'R\$ ${balance >= 0 ? balance.toStringAsFixed(2) : '0.00'}' : '****',
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              const Icon(Icons.arrow_downward, color: Colors.white),
-                              const SizedBox(height: 4),
-                              const Text('Perdas', style: TextStyle(color: Colors.white70)),
-                              Text(
-                                isValuesVisible ? 'R\$ ${balance < 0 ? balance.abs().toStringAsFixed(2) : '0.00'}' : '****',
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 50,
-                right: 20,
-                child: IconButton(
-                  icon: const Icon(Icons.menu, color: Colors.white),
-                  onPressed: () {
-                    Scaffold.of(context).openDrawer();
-                  },
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showOverlay(context),
-        backgroundColor: primaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: primaryColor,
-        unselectedItemColor: Colors.grey,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.add, color: Colors.transparent), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Future<double> _calculateMonthlyBalance() async {
-    final now = DateTime.now();
-    final startOfMonth = DateTime(now.year, now.month, 1);
-    final endOfMonth = DateTime(now.year, now.month + 1, 0);
-
-    final snapshot = await _firestore
-        .collection('transactions')
-        .where('timestamp', isGreaterThanOrEqualTo: startOfMonth)
-        .where('timestamp', isLessThanOrEqualTo: endOfMonth)
-        .get();
-
-    double balance = 0.0;
-    for (var doc in snapshot.docs) {
-      final value = doc['value'] as double? ?? 0.0;
-      balance += value;
-    }
-    return balance;
+// Botões das abas
+  Widget _buildTabButton(String label) {
+    final bool isSelected = currentTab == label;
+    return GestureDetector(
+      onTap: () => _showTab(label),
+      child: Padding(
+        padding: const EdgeInsets.only(
+            bottom: 12.0), // Aumentando o espaço abaixo do texto
+        child: Transform.translate(
+          offset: const Offset(0, 0), // Ajuste fino, se necessário
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : Colors.white70,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              decoration: isSelected ? TextDecoration.underline : null,
+              decorationColor: isSelected ? Colors.white : null,
+              decorationThickness: isSelected ? 2.0 : null,
+              decorationStyle: isSelected ? TextDecorationStyle.solid : null,
+              shadows: isSelected
+                  ? [
+                      const Shadow(
+                        color: Colors.white,
+                        blurRadius: 4.0,
+                        offset: Offset(0, 0),
+                      ),
+                    ]
+                  : null,
+            ),
+            textAlign: TextAlign.center,
+            strutStyle: const StrutStyle(
+              height: 2.0,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
-  Widget _buildTransactionTile(
-    String title, String date, String amount, bool isGain,
-    [String? status]) {
-    final color = isGain ? Colors.green : Colors.red;
+  // Painel de Rendimientos com botão de Joinha e valor em moeda
+  Widget _buildRendimientosPanel() {
+    final Color backgroundColor = isPositive ? primaryColor : Colors.red;
+    final IconData thumbIcon = isPositive ? Icons.thumb_up : Icons.thumb_down;
+    final String panelTitle = isPositive ? 'Valor Ganho' : 'Valor Perdido';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.grey.shade200,
-            blurRadius: 5,
-            spreadRadius: 1,
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, 5),
           ),
         ],
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            backgroundColor: Colors.grey.shade200,
-            child: const Icon(Icons.sports_soccer, color: Colors.black54),
+          Column(
+            children: [
+              const Text('Positivo',
+                  style: TextStyle(fontSize: 12, color: Colors.white)),
+              IconButton(
+                icon: Icon(thumbIcon, color: Colors.white, size: 40),
+                onPressed: () {
+                  setState(() {
+                    isPositive = !isPositive;
+                    final raw =
+                        valueController.text.replaceAll(RegExp(r'[^0-9]'), '');
+                    double parsed = raw.isEmpty ? 0.0 : double.parse(raw) / 100;
+                    _value = isPositive ? parsed.abs() : -parsed.abs();
+                    valueController.text = currencyFormatter.format(_value);
+                  });
+                },
+              ),
+              const Text('Negativo',
+                  style: TextStyle(fontSize: 12, color: Colors.white)),
+            ],
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(date, style: const TextStyle(fontSize: 12)),
-                    if (status != null) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(status, style: const TextStyle(fontSize: 10, color: Colors.black87)),
-                      ),
-                    ],
-                  ],
+                Text(
+                  panelTitle,
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: valueController,
+                  focusNode: _valueFocusNode,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: 'R\$ 0,00',
+                    hintStyle: TextStyle(color: Colors.white70),
+                  ),
                 ),
               ],
             ),
           ),
-          Text(amount, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
         ],
       ),
     );
   }
+
+  // Campo de seleção de data com botão de calendário
+  Widget _buildDateInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Data', style: TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () => _selectDate(context),
+          child: AbsorbPointer(
+            child: TextField(
+              controller: dateController,
+              decoration: InputDecoration(
+                hintText: 'Hoje',
+                prefixIcon: const Icon(Icons.calendar_today),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.grey),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.grey),
+                ),
+                filled: true,
+                fillColor: Colors.grey[100],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Dropdown de seleção (Conta / Casa de Aposta / etc.)
+  Widget _buildDropdownField(String label, List<String> options,
+      String? selectedValue, ValueChanged<String?> onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: DropdownButton<String>(
+            value: selectedValue,
+            hint: Text('Selecione $label'),
+            icon: const Icon(Icons.arrow_drop_down),
+            underline: const SizedBox(),
+            isExpanded: true,
+            onChanged: onChanged,
+            items: options
+                .map((opt) => DropdownMenuItem(
+                      value: opt,
+                      child: Text(opt),
+                    ))
+                .toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Botões redondos (Confirmar / Cancelar)
+  Widget _buildCircleButton(
+      IconData icon, Color color, VoidCallback onPressed) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: Colors.white),
+        onPressed: onPressed,
+      ),
+    );
+  }
+
+  // Campo de entrada genérico (nome, senha, etc.) com ícone
+  Widget _buildLabeledInput(
+    String label,
+    IconData icon,
+    TextEditingController controller,
+    bool isCurrency, [
+    FocusNode? focusNode,
+    bool enabled = true,
+  ]) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          focusNode: focusNode,
+          enabled: enabled,
+          keyboardType: isCurrency ? TextInputType.number : TextInputType.text,
+          inputFormatters:
+              isCurrency ? [FilteringTextInputFormatter.digitsOnly] : null,
+          onChanged: isCurrency
+              ? (value) {
+                  String raw =
+                      controller.text.replaceAll(RegExp(r'[^0-9]'), '');
+                  if (raw.isEmpty) raw = '0';
+                  double parsed = double.parse(raw) / 100;
+                  controller.text = currencyFormatter.format(parsed);
+                  controller.selection =
+                      TextSelection.collapsed(offset: controller.text.length);
+                }
+              : null,
+          decoration: InputDecoration(
+            hintText: isCurrency ? 'R\$ 0,00' : label,
+            prefixIcon: Icon(icon),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.grey),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.grey),
+            ),
+            filled: true,
+            fillColor: Colors.grey[100],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
-class HeaderClipper extends CustomClipper<Path> {
+// Curva personalizada para o cabeçalho
+class TopCurveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     final path = Path();
     path.lineTo(0, size.height - 40);
-    path.quadraticBezierTo(size.width / 2, size.height + 40, size.width, size.height - 40);
+    path.quadraticBezierTo(
+        size.width / 2, size.height + 40, size.width, size.height - 40);
     path.lineTo(size.width, 0);
     path.close();
     return path;
@@ -383,5 +741,3 @@ class HeaderClipper extends CustomClipper<Path> {
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
-
-// A classe TransactionScreen foi movida para o arquivo separado (ou pode ser integrada aqui se desejar)

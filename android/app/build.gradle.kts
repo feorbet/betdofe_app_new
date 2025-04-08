@@ -7,9 +7,9 @@ plugins {
 
 android {
     namespace = "com.example.betdofeappnew"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35 // Ajustado para 35
 
-    //  Adicione essa linha:
+    // Adicione essa linha:
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -23,8 +23,8 @@ android {
 
     defaultConfig {
         applicationId = "com.example.betdofeappnew"
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdkVersion(23)
+        targetSdkVersion(35) // Ajustado para 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

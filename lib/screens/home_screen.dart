@@ -1,10 +1,13 @@
-// home_screen.dart com TransactionScreen integrada
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:betdofe_app_new/screens/transaction_screen.dart';
+import 'package:betdofe_app_new/screens/account_register_screen.dart';
+import 'package:betdofe_app_new/screens/betting_house_register_screen.dart';
+import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -20,6 +23,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int _selectedIndex = 0;
   bool isValuesVisible = true;
+
+  final NumberFormat currencyFormatter =
+      NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
@@ -40,15 +46,126 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _logout(BuildContext context) async {
     await _auth.signOut();
+    if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/login');
   }
 
   void _showOverlay(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const TransactionScreen(),
-      ),
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      builder: (context) {
+        return GestureDetector(
+          onTap: () {
+            Navigator.pop(context);
+          },
+          child: Container(
+            color: Colors.transparent,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 90),
+                width: 200,
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.8),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InkWell(
+                      splashColor: Colors.white.withOpacity(0.3),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const TransactionScreen(),
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 16),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.currency_exchange, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text(
+                              'Transações',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 14),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      splashColor: Colors.white.withOpacity(0.3),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AccountRegisterScreen(),
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 16),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.account_circle, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text(
+                              'Contas', // Alterando para plural
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 14),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      splashColor: Colors.white.withOpacity(0.3),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const BettingHouseRegisterScreen(),
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 16),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.sports_soccer, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text(
+                              'Casas de Aposta', // Alterando para plural
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 14),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -68,27 +185,20 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 color: primaryColor,
               ),
-              child: Text(
+              child: const Text(
                 'Menu',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                ),
+                style: TextStyle(color: Colors.white, fontSize: 24),
               ),
             ),
             ListTile(
               leading: const Icon(Icons.home),
               title: const Text('Home'),
-              onTap: () {
-                Navigator.pop(context);
-              },
+              onTap: () => Navigator.pop(context),
             ),
             ListTile(
               leading: const Icon(Icons.person),
               title: const Text('Perfil'),
-              onTap: () {
-                Navigator.pop(context);
-              },
+              onTap: () => Navigator.pop(context),
             ),
             ListTile(
               leading: const Icon(Icons.logout),
@@ -115,32 +225,48 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
-                        Text('Histórico de Transações', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text('Ver tudo', style: TextStyle(color: Colors.grey, fontSize: 14)),
+                        Text('Histórico de Transações',
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text('Ver tudo',
+                            style: TextStyle(color: Colors.grey, fontSize: 14)),
                       ],
                     ),
                   ),
                   const SizedBox(height: 5),
                   Expanded(
                     child: StreamBuilder<QuerySnapshot>(
-                      stream: _firestore.collection('transactions').orderBy('timestamp', descending: true).snapshots(),
+                      stream: _firestore
+                          .collection('transactions')
+                          .orderBy('timestamp', descending: true)
+                          .snapshots(),
                       builder: (context, snapshot) {
-                        if (!snapshot.hasData) return const CircularProgressIndicator();
+                        if (!snapshot.hasData) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        }
                         final transactions = snapshot.data!.docs;
                         return ListView.builder(
                           itemCount: transactions.length,
                           itemBuilder: (context, index) {
-                            final data = transactions[index].data() as Map<String, dynamic>;
-                            final title = data['bettingHouse'] ?? 'Transação';
-                            final date = (data['date'] ?? '').toString();
-                            final value = data['value'] ?? 0.0;
-                            final status = data['status'] ?? '';
+                            final data = transactions[index].data()
+                                as Map<String, dynamic>;
+                            final double value = data['value'] ?? 0.0;
+                            final String date = data['date'] ?? '';
+                            final String account = data['account'] ?? '';
+                            final String bettingHouse =
+                                data['bettingHouse'] ?? '';
+                            final double investedValue =
+                                data['investedValue'] ?? 0.0;
                             return _buildTransactionTile(
-                              title,
+                              bettingHouse,
                               date,
-                              value >= 0 ? '+ R\$ ${value.toStringAsFixed(2)}' : '- R\$ ${value.abs().toStringAsFixed(2)}',
+                              value >= 0
+                                  ? '+ ${currencyFormatter.format(value)}'
+                                  : '- ${currencyFormatter.format(value.abs())}',
                               value >= 0,
-                              status,
+                              account: account,
+                              investedValue: investedValue,
                             );
                           },
                         );
@@ -172,8 +298,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(_getGreeting(), style: const TextStyle(color: Colors.white70, fontSize: 16)),
-                            Text(userName, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                            Text(_getGreeting(),
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 16)),
+                            Text(userName,
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ],
@@ -191,12 +323,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: BoxDecoration(
                     color: primaryColor,
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
+                    boxShadow: const [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
-                      ),
+                          color: Colors.black12,
+                          blurRadius: 10,
+                          offset: Offset(0, 5)),
                     ],
                   ),
                   child: Column(
@@ -205,11 +336,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Saldo Total', style: TextStyle(color: Colors.white70)),
+                          const Text('Saldo Total',
+                              style: TextStyle(color: Colors.white70)),
                           GestureDetector(
                             onTap: _toggleValuesVisibility,
                             child: Icon(
-                              isValuesVisible ? Icons.visibility : Icons.visibility_off,
+                              isValuesVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
                               color: Colors.white70,
                               size: 20,
                             ),
@@ -218,8 +352,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        isValuesVisible ? 'R\$ ${balance.toStringAsFixed(2)}' : '****',
-                        style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                        isValuesVisible
+                            ? 'R\$ ${balance.toStringAsFixed(2)}'
+                            : '****',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 12),
                       Row(
@@ -227,22 +366,30 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Column(
                             children: [
-                              const Icon(Icons.arrow_upward, color: Colors.white),
+                              const Icon(Icons.arrow_upward,
+                                  color: Colors.white),
                               const SizedBox(height: 4),
-                              const Text('Ganhos', style: TextStyle(color: Colors.white70)),
+                              const Text('Ganhos',
+                                  style: TextStyle(color: Colors.white70)),
                               Text(
-                                isValuesVisible ? 'R\$ ${balance >= 0 ? balance.toStringAsFixed(2) : '0.00'}' : '****',
+                                isValuesVisible
+                                    ? 'R\$ ${balance >= 0 ? balance.toStringAsFixed(2) : '0.00'}'
+                                    : '****',
                                 style: const TextStyle(color: Colors.white),
                               ),
                             ],
                           ),
                           Column(
                             children: [
-                              const Icon(Icons.arrow_downward, color: Colors.white),
+                              const Icon(Icons.arrow_downward,
+                                  color: Colors.white),
                               const SizedBox(height: 4),
-                              const Text('Perdas', style: TextStyle(color: Colors.white70)),
+                              const Text('Perdas',
+                                  style: TextStyle(color: Colors.white70)),
                               Text(
-                                isValuesVisible ? 'R\$ ${balance < 0 ? balance.abs().toStringAsFixed(2) : '0.00'}' : '****',
+                                isValuesVisible
+                                    ? 'R\$ ${balance < 0 ? balance.abs().toStringAsFixed(2) : '0.00'}'
+                                    : '****',
                                 style: const TextStyle(color: Colors.white),
                               ),
                             ],
@@ -258,9 +405,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 right: 20,
                 child: IconButton(
                   icon: const Icon(Icons.menu, color: Colors.white),
-                  onPressed: () {
-                    Scaffold.of(context).openDrawer();
-                  },
+                  onPressed: () => Scaffold.of(context).openDrawer(),
                 ),
               ),
             ],
@@ -284,7 +429,8 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.add, color: Colors.transparent), label: ''),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.add, color: Colors.transparent), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
         ],
@@ -312,8 +458,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTransactionTile(
-    String title, String date, String amount, bool isGain,
-    [String? status]) {
+    String title,
+    String date,
+    String amount,
+    bool isGain, {
+    required String account,
+    required double investedValue,
+  }) {
     final color = isGain ? Colors.green : Colors.red;
 
     return Container(
@@ -324,10 +475,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade200,
-            blurRadius: 5,
-            spreadRadius: 1,
-          ),
+              color: Colors.grey.shade200, blurRadius: 5, spreadRadius: 1),
         ],
       ),
       child: Row(
@@ -341,28 +489,20 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 16)),
                 const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(date, style: const TextStyle(fontSize: 12)),
-                    if (status != null) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(status, style: const TextStyle(fontSize: 10, color: Colors.black87)),
-                      ),
-                    ],
-                  ],
+                Text(
+                  'Data: $date\nConta: $account\nInvestido: ${currencyFormatter.format(investedValue)}',
+                  style: const TextStyle(fontSize: 12),
                 ),
               ],
             ),
           ),
-          Text(amount, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(amount,
+              style: TextStyle(
+                  color: color, fontWeight: FontWeight.bold, fontSize: 14)),
         ],
       ),
     );
@@ -374,7 +514,8 @@ class HeaderClipper extends CustomClipper<Path> {
   Path getClip(Size size) {
     final path = Path();
     path.lineTo(0, size.height - 40);
-    path.quadraticBezierTo(size.width / 2, size.height + 40, size.width, size.height - 40);
+    path.quadraticBezierTo(
+        size.width / 2, size.height + 40, size.width, size.height - 40);
     path.lineTo(size.width, 0);
     path.close();
     return path;
@@ -383,5 +524,3 @@ class HeaderClipper extends CustomClipper<Path> {
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
-
-// A classe TransactionScreen foi movida para o arquivo separado (ou pode ser integrada aqui se desejar)

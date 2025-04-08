@@ -8,29 +8,34 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  
   # Firebase
-  firebase_core: ^2.25.4
-  firebase_auth: ^4.17.4
-  cloud_firestore: ^4.17.5  # Para armazenar apostas
+  firebase_core: ^3.13.0
+  firebase_auth: ^5.5.2
+  cloud_firestore: ^5.6.6  # Para armazenar apostas
 
   # Login social
   google_sign_in: ^6.2.1
   flutter_signin_button: ^2.0.0
 
   # UI
-  google_fonts: ^6.1.0
-  flutter_svg: ^2.0.7
+  google_fonts: ^6.2.1
+  flutter_svg: ^2.0.12
   shimmer: ^3.0.0
   provider: ^6.1.2
-  cupertino_icons: ^1.0.6
-  fl_chart: ^0.68.0  # Para gráficos de ganhos e perdas
-  intl: ^0.19.0  # Para formatar datas
+  cupertino_icons: ^1.0.8
+  fl_chart: ^0.70.2  # Para gráficos de ganhos e perdas
+  intl: ^0.20.2  # Para formatar datas
+  table_calendar: ^3.2.0
+  font_awesome_flutter: ^9.2.0  # Reduzido para compatibilidade com flutter_signin_button
+  flutter_multi_formatter: ^2.13.7
+  url_launcher: ^6.3.0
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
 
 flutter:
   uses-material-design: true

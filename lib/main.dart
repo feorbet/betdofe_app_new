@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:betdofe_app_new/firebase_options.dart';
-import 'package:betdofe_app_new/screens/splash_screen.dart';
-import 'package:betdofe_app_new/screens/onboarding_screen.dart';
-import 'package:betdofe_app_new/screens/login_screen.dart';
-import 'package:betdofe_app_new/screens/register_screen.dart';
-import 'package:betdofe_app_new/screens/home_screen.dart';
+import 'package:betdofe_app_new/screens/home_screen.dart'; // Ajuste o caminho conforme necessário
+import 'package:intl/date_symbol_data_local.dart'; // Adicione esta importação
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp();
+  // Inicializa os dados de localização para pt_BR
+  await initializeDateFormatting('pt_BR', null);
   runApp(const MyApp());
 }
 
@@ -21,14 +17,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      initialRoute: '/splash',
+      title: 'Betdofe App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: const HomeScreen(), // Ajuste para a tela inicial do seu app
       routes: {
-        '/splash': (context) => const SplashScreen(),
-        '/onboarding': (context) => const OnboardingScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
-        '/home': (context) => HomeScreen(), // 🔧 Removido o const aqui
+        // Comentei a rota do LoginScreen para evitar o erro
+        // '/login': (context) => const LoginScreen(), // Descomente e ajuste conforme necessário
+        // Outras rotas...
       },
     );
   }
