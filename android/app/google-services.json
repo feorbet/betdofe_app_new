@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1019981443447-ts9vg058g30tklq6om3urih45hmfr1mo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.betdofeappnew",
+            "certificate_hash": "bd555e053e0b7d275c777d9dfd40cd062b466f71"
+          }
+        },
+        {
           "client_id": "1019981443447-uce27hsc87lmntmdasa5aejsdpqgpjia.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -37,6 +45,13 @@
             {
               "client_id": "1019981443447-3rq0no5u4lakiacdoe1fqrsvg16643hh.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "1019981443447-v5qbl9rck157eov2oqmtpmd40qfhde87.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.betdofeAppNew"
+              }
             }
           ]
         }

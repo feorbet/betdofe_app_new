@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="default_web_client_id" translatable="false">1019981443447-3rq0no5u4lakiacdoe1fqrsvg16643hh.apps.googleusercontent.com</string>
+    <string name="gcm_defaultSenderId" translatable="false">1019981443447</string>
+    <string name="google_api_key" translatable="false">AIzaSyDj4sQ48E-WAPGHU4vyt9EO5kpABV6GHXM</string>
+    <string name="google_app_id" translatable="false">1:1019981443447:android:9b920bcf5396374fb9b172</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyDj4sQ48E-WAPGHU4vyt9EO5kpABV6GHXM</string>
+    <string name="google_storage_bucket" translatable="false">betdofeapp.firebasestorage.app</string>
+    <string name="project_id" translatable="false">betdofeapp</string>
+</resources>

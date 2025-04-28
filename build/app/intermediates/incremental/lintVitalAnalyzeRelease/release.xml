@@ -1,0 +1,37 @@
+<variant
+    name="release"
+    package="com.example.betdofeappnew"
+    minSdkVersion="23"
+    targetSdkVersion="35"
+    shrinking="true"
+    mergedManifest="C:\App\betdofe_app_new\build\app\intermediates\merged_manifest\release\processReleaseMainManifest\AndroidManifest.xml"
+    proguardFiles="C:\App\betdofe_app_new\build\app\intermediates\default_proguard_files\global\proguard-android-optimize.txt-8.7.0;proguard-rules.pro"
+    partialResultsDir="C:\App\betdofe_app_new\build\app\intermediates\lint_vital_partial_results\release\lintVitalAnalyzeRelease\out"
+    desugaredMethodsFiles="C:\Users\felip\.gradle\caches\8.10.2\transforms\a569f7dd38fcfe6a0c5fbf55c2a72200\transformed\D8BackportedDesugaredMethods.txt">
+  <buildFeatures
+      namespacing="REQUIRED"/>
+  <sourceProviders>
+    <sourceProvider
+        manifests="src\main\AndroidManifest.xml"
+        javaDirectories="src\main\java;src\release\java;src\main\kotlin;src\release\kotlin"
+        resDirectories="src\main\res;src\release\res"
+        assetsDirectories="src\main\assets;src\release\assets"/>
+  </sourceProviders>
+  <testSourceProviders>
+  </testSourceProviders>
+  <testFixturesSourceProviders>
+  </testFixturesSourceProviders>
+  <manifestPlaceholders>
+    <placeholder
+        name="applicationName"
+        value="android.app.Application" />
+  </manifestPlaceholders>
+  <artifact
+      classOutputs="C:\App\betdofe_app_new\build\app\intermediates\javac\release\compileReleaseJavaWithJavac\classes;C:\App\betdofe_app_new\build\app\tmp\kotlin-classes\release;C:\App\betdofe_app_new\build\app\kotlinToolingMetadata;C:\App\betdofe_app_new\build\app\intermediates\compile_and_runtime_not_namespaced_r_class_jar\release\processReleaseResources\R.jar"
+      type="MAIN"
+      applicationId="com.example.betdofeappnew"
+      generatedSourceFolders="C:\App\betdofe_app_new\build\app\generated\ap_generated_sources\release\out"
+      generatedResourceFolders="C:\App\betdofe_app_new\build\app\generated\res\google-services\release;C:\App\betdofe_app_new\build\app\generated\res\resValues\release"
+      desugaredMethodsFiles="C:\Users\felip\.gradle\caches\8.10.2\transforms\a569f7dd38fcfe6a0c5fbf55c2a72200\transformed\D8BackportedDesugaredMethods.txt">
+  </artifact>
+</variant>
