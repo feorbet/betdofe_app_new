@@ -73,7 +73,7 @@ class MainScaffold extends StatelessWidget {
               },
             ),
             backgroundColor: Colors.white,
-            resizeToAvoidBottomInset: true,
+            resizeToAvoidBottomInset: false, // Alterado para false
           ),
           if (showFloatingActionButton)
             Positioned(

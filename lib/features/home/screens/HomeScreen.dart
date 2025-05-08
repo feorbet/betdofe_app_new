@@ -1507,19 +1507,17 @@ class _HomeScreenState extends State<HomeScreen> {
     // Calcular o valor líquido
     final double valorLiquido;
     if (collection == 'per_bet') {
-      valorLiquido = value -
-          (investedValue +
-              commission); // valor total - (valor investido + comissão)
+      valorLiquido = value - (investedValue + commission);
     } else if (collection == 'positive_transactions') {
-      valorLiquido = (value - commission) -
-          investedValue; // (valor bruto - comissão) - valor investido
+      valorLiquido = (value - commission) - investedValue;
     } else {
-      // negative_transactions
-      valorLiquido = value - commission; // valor bruto - comissão
+      valorLiquido = value - commission;
     }
 
-    // Determinar a cor com base no valor líquido
-    final color = valorLiquido >= 0 ? AppConstants.green : AppConstants.red;
+    // Determinar a cor do fundo e o ícone com base no valor líquido
+    final backgroundColor =
+        valorLiquido >= 0 ? AppConstants.green : AppConstants.red;
+    final icon = valorLiquido >= 0 ? Icons.trending_up : Icons.trending_down;
 
     // Formatando o valor líquido para exibição
     final String amountLiquido = valorLiquido >= 0
@@ -1530,7 +1528,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () => _showTransactionDetails(data, collection, isGain),
       child: Container(
         margin: const EdgeInsets.only(bottom: AppConstants.defaultPadding),
-        height: 100, // Altura fixa para todos os itens
+        height: 100,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(AppConstants.borderRadius),
@@ -1551,13 +1549,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   CircleAvatar(
-                    backgroundColor: AppConstants.textGrey200,
+                    backgroundColor: backgroundColor,
                     child: Icon(
-                      collection == 'per_bet'
-                          ? Icons.sports_soccer // Ícone original para per_bet
-                          : Icons
-                              .account_circle, // Ícone original para outras transações
-                      color: Colors.black54,
+                      icon,
+                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(width: AppConstants.smallSpacing),
@@ -1606,9 +1601,9 @@ class _HomeScreenState extends State<HomeScreen> {
               bottom: 0,
               child: Center(
                 child: Text(
-                  amountLiquido, // Exibir o valor líquido
+                  amountLiquido,
                   style: TextStyle(
-                    color: color, // Cor baseada no valor líquido
+                    color: backgroundColor,
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),

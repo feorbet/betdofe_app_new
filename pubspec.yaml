@@ -59,6 +59,7 @@ flutter:
     - assets/stadium_background.png
     - assets/images/whatsapp_icon.png
     - assets/splash_background.png
+    - assets/images/wooden_clipboard.png
 
 flutter_icons:
   android: true

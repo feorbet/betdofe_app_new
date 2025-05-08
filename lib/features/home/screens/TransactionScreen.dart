@@ -457,41 +457,74 @@ class _TransactionScreenState extends State<TransactionScreen>
   Future<void> _showConfirmationDialog() async {
     bool? keepActive = await showDialog<bool>(
       context: context,
+      barrierDismissible:
+          false, // Impede que o diálogo seja fechado ao clicar fora
       builder: (context) => AlertDialog(
         backgroundColor: AppConstants.primaryColor,
-        title: const Text(
-          'Transação salva com sucesso!',
-          style: TextStyle(
-            color: AppConstants.white,
-            fontSize: 18,
-          ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.borderRadius),
         ),
-        content: const Text(
-          'A conta continua Ativa?\nSIM ou NÃO',
-          style: TextStyle(color: AppConstants.white),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'SIM',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Transação salva com sucesso!\nA conta continua Ativa?',
+              textAlign: TextAlign.center, // Centraliza o texto
               style: TextStyle(
-                color: AppConstants.green, // Cor verde para "SIM"
-                fontWeight: FontWeight.bold,
+                color: AppConstants.white,
+                fontSize: 18,
               ),
             ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text(
-              'NÃO',
-              style: TextStyle(
-                color: AppConstants.red, // Cor vermelha para "NÃO"
-                fontWeight: FontWeight.bold,
-              ),
+            const SizedBox(height: AppConstants.mediumSpacing),
+            Row(
+              mainAxisAlignment:
+                  MainAxisAlignment.center, // Centraliza os botões
+              children: [
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppConstants.green,
+                    foregroundColor: AppConstants.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppConstants.borderRadius),
+                    ),
+                  ),
+                  child: const Text(
+                    'SIM',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppConstants.mediumSpacing),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppConstants.red,
+                    foregroundColor: AppConstants.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppConstants.borderRadius),
+                    ),
+                  ),
+                  child: const Text(
+                    'NÃO',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
 
@@ -504,11 +537,9 @@ class _TransactionScreenState extends State<TransactionScreen>
         await _updateAccountStatus(selectedAccount!, 'Inativa');
       }
       _clearFields();
-    } else {
-      // Caso o diálogo seja fechado sem escolher (ex.: clicando fora do diálogo)
-      if (mounted) {
-        Navigator.pop(context);
-      }
+    }
+    if (mounted) {
+      Navigator.pop(context);
     }
   }
 
@@ -529,7 +560,7 @@ class _TransactionScreenState extends State<TransactionScreen>
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.isEditing ? 'Editar Transação' : 'Nova Transação',
+          widget.isEditing ? 'Editar Transação' : 'Transações',
           style: const TextStyle(
             color: AppConstants.white,
             fontSize: 22,
@@ -926,7 +957,6 @@ class _TransactionScreenState extends State<TransactionScreen>
       double commission =
           rawCommission.isEmpty ? 0 : double.parse(rawCommission) / 100;
 
-      // Validação: valor ganho não pode ser menor ou igual à soma de invested e commission
       if (isPositive && value <= (invested + commission)) {
         if (mounted) {
           showAppMessage(context,
@@ -942,7 +972,6 @@ class _TransactionScreenState extends State<TransactionScreen>
             isPositive ? 'positive_transactions' : 'negative_transactions';
 
         if (widget.isEditing && widget.transactionId != null) {
-          // Atualizar transação existente
           await _firestore
               .collection('users')
               .doc(user.uid)
@@ -962,7 +991,6 @@ class _TransactionScreenState extends State<TransactionScreen>
             showAppMessage(context, 'Transação atualizada com sucesso!');
           }
         } else {
-          // Adicionar nova transação
           await _firestore
               .collection('users')
               .doc(user.uid)
@@ -1039,7 +1067,6 @@ class _TransactionScreenState extends State<TransactionScreen>
       double commission =
           rawCommission.isEmpty ? 0 : double.parse(rawCommission) / 100;
 
-      // Validação: valor ganho não pode ser menor ou igual à soma de invested e commission
       if (isPositive && value <= (invested + commission)) {
         if (mounted) {
           showAppMessage(context,
@@ -1050,10 +1077,9 @@ class _TransactionScreenState extends State<TransactionScreen>
       }
 
       try {
-        double formattedValue = isPositive ? value : -value; // Ajuste aqui
+        double formattedValue = isPositive ? value : -value;
 
         if (widget.isEditing && widget.transactionId != null) {
-          // Atualizar transação existente
           await _firestore
               .collection('users')
               .doc(user.uid)
@@ -1074,7 +1100,6 @@ class _TransactionScreenState extends State<TransactionScreen>
             showAppMessage(context, 'Transação atualizada com sucesso!');
           }
         } else {
-          // Adicionar nova transação
           await _firestore
               .collection('users')
               .doc(user.uid)
